@@ -1,5 +1,6 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
+const puppeteer = require("puppeteer");
 
 class Scarp {
   static async scrap(req, res) {
@@ -15,14 +16,47 @@ class Scarp {
     if (!selectors) {
       return res.status(400).json({ error: "Selectors are required" });
     }
+
     try {
-      const response = await axios.get(url, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        },
+      // Launch Puppeteer browser
+      const browser = await puppeteer.launch({
+        headless: true, // Set to false if you want to see the browser UI
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+        ],
       });
-      const $ = cheerio.load(response.data);
+      const page = await browser.newPage();
+
+      // Set custom headers
+      await page.setExtraHTTPHeaders({
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Language": "en-US,en;q=0.9",
+        Connection: "keep-alive",
+        "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Brave";v="126"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "cross-site",
+        "Sec-Fetch-User": "?1",
+        "Sec-Gpc": "1",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+      });
+
+      // Navigate to the URL
+      await page.goto(url, { waitUntil: "networkidle2", timeout: 1200000 });
+
+      // Get the page content
+      const content = await page.content();
+      await browser.close();
+
+      const $ = cheerio.load(content);
       let results = {};
 
       if (!selectors) {
@@ -54,13 +88,14 @@ class Scarp {
     return results;
   }
 
-  static formatScraping(selector, $, parentEl = null) {
+  static formatScraping(selector, $) {
     let results = [];
 
     $(selector.parentTag).each((index, element) => {
       results.push(Scarp.formatChildren($, element, selector.children));
     });
 
+    console.log(`Found ${results.length} items for selector ${selector.name}`);
     return results;
   }
 
