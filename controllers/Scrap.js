@@ -1,6 +1,6 @@
-const axios = require("axios");
+const puppeteer = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium-min");
 const cheerio = require("cheerio");
-const puppeteer = require("puppeteer");
 
 class Scarp {
   static async scrap(req, res) {
@@ -20,13 +20,15 @@ class Scarp {
     try {
       // Launch Puppeteer browser
       const browser = await puppeteer.launch({
-        headless: true, // Set to false if you want to see the browser UI
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-        ],
+        args: [...chromium.args, "--hide-scrollbars", "--disable-web-security"],
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(
+          `https://your-uploaded-chromium-pack.tar` // Replace with your actual URL if needed
+        ),
+        headless: chromium.headless,
+        ignoreHTTPSErrors: true,
       });
+
       const page = await browser.newPage();
 
       // Set custom headers
