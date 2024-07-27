@@ -22,9 +22,7 @@ class Scarp {
       const browser = await puppeteer.launch({
         args: [...chromium.args, "--hide-scrollbars", "--disable-web-security"],
         defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(
-          `https://your-uploaded-chromium-pack.tar` // Replace with your actual URL if needed
-        ),
+        executablePath: await chromium.executablePath(),
         headless: chromium.headless,
         ignoreHTTPSErrors: true,
       });
