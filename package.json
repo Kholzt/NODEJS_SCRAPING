@@ -29,7 +29,11 @@
     "mysql2": "^3.6.1",
     "nodemon": "^3.0.1",
     "puppeteer": "^22.13.1",
+    "puppeteer-core": "^22.14.0",
     "sequelize": "^6.33.0",
     "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@sparticuz/chromium": "^126.0.0"
   }
 }

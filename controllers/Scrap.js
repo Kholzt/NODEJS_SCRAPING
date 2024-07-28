@@ -1,9 +1,17 @@
-const puppeteer = require("puppeteer-core");
-const chromium = require("@sparticuz/chromium-min");
 const cheerio = require("cheerio");
+const puppeteer = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium");
 
 class Scarp {
   static async scrap(req, res) {
+    chromium.setHeadlessMode = true;
+    // Optional: If you'd like to disable webgl, true is the default.
+    chromium.setGraphicsMode = false;
+
+    // Optional: Load any fonts you need. Open Sans is included by default in AWS Lambda instances
+    await chromium.font(
+      "https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf"
+    );
     let { url, selectors } = Object.assign({}, req.query, req.body);
 
     if (Array.isArray(selectors)) {
@@ -18,18 +26,16 @@ class Scarp {
     }
 
     try {
-      // Launch Puppeteer browser
+      chromium.setGraphicsMode = false;
       const browser = await puppeteer.launch({
-        args: [...chromium.args, "--hide-scrollbars", "--disable-web-security"],
+        args: chromium.args,
         defaultViewport: chromium.defaultViewport,
         executablePath: await chromium.executablePath(),
         headless: chromium.headless,
-        ignoreHTTPSErrors: true,
       });
 
       const page = await browser.newPage();
 
-      // Set custom headers
       await page.setExtraHTTPHeaders({
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
@@ -49,19 +55,13 @@ class Scarp {
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
       });
 
-      // Navigate to the URL
-      await page.goto(url, { waitUntil: "networkidle2", timeout: 1200000 });
+      await page.goto(url, { waitUntil: "networkidle2", timeout: 120000 });
 
-      // Get the page content
       const content = await page.content();
       await browser.close();
 
       const $ = cheerio.load(content);
       let results = {};
-
-      if (!selectors) {
-        selectors = [];
-      }
 
       selectors = JSON.parse(selectors);
 
